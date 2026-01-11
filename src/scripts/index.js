@@ -6,7 +6,7 @@
   Из index.js не допускается что то экспортировать
 */
 
-import { initialCards } from "./cards.js";
+import { getCardList, getUserInfo } from "./components/api.js";
 import { createCardElement, deleteCard, likeCard } from "./components/card.js";
 import { openModalWindow, closeModalWindow, setCloseModalWindowEventListeners } from "./components/modal.js";
 import { enableValidation, clearValidation } from "./components/validation.js";
@@ -113,6 +113,7 @@ openCardFormButton.addEventListener("click", () => {
 });
 
 // отображение карточек
+/*
 initialCards.forEach((data) => {
   placesWrap.append(
     createCardElement(data, {
@@ -122,9 +123,39 @@ initialCards.forEach((data) => {
     })
   );
 });
+*/
 
 //настраиваем обработчики закрытия попапов
 const allPopups = document.querySelectorAll(".popup");
 allPopups.forEach((popup) => {
   setCloseModalWindowEventListeners(popup);
 });
+
+
+// Загружаем данные с сервера и отображаем их
+Promise.all([getCardList(), getUserInfo()])
+  .then(([cards, userData]) => {
+    // Обновляем профиль
+    profileTitle.textContent = userData.name;
+    profileDescription.textContent = userData.about;
+    profileAvatar.style.backgroundImage = `url(${userData.avatar})`;
+
+    // Очищаем контейнер 
+    placesWrap.innerHTML = '';
+
+    // Рендер карточки из данных сервера
+    cards.forEach((cardData) => {
+      const cardElement = createCardElement(
+        cardData,
+        {
+          onPreviewPicture: handlePreviewPicture,
+          onLikeIcon: likeCard,
+          onDeleteCard: deleteCard,
+        }
+      );
+      placesWrap.append(cardElement);
+    });
+  })
+  .catch((err) => {
+    console.log(err);
+  });
