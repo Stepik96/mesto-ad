@@ -17,7 +17,37 @@ export const getUserInfo = () => {
 };
 
 export const getCardList = () => {
-  fetch(`${config.baseUrl}/cards`, {
+  return fetch(`${config.baseUrl}/cards`, {
     headers: config.headers,
   }).then(getResponseData);
-}
+};
+
+export const setUserInfo = ({ name, about }) => {
+  return fetch(`${config.baseUrl}/users/me`, {
+    method: "PATCH",
+    headers: config.headers,
+    body: JSON.stringify({
+      name,
+      about,
+    }),
+  }).then(getResponseData);
+};
+
+export const setAvatar = ({ avatar }) => {
+  return fetch(`${config.baseUrl}/users/me/avatar`, {
+    method: "PATCH",
+    headers: config.headers,
+    body: JSON.stringify({ avatar }),
+  }).then(getResponseData);
+};
+
+export const addNewCard = ({ name, link }) => {
+  return fetch(`${config.baseUrl}/cards`, {
+    method: "POST",
+    headers: config.headers,
+    body: JSON.stringify({
+      name,
+      link,
+    }),
+  }).then(getResponseData);
+};

@@ -6,7 +6,7 @@
   Из index.js не допускается что то экспортировать
 */
 
-import { getCardList, getUserInfo } from "./components/api.js";
+import { getCardList, getUserInfo, setUserInfo, setAvatar, addNewCard } from "./components/api.js";
 import { createCardElement, deleteCard, likeCard } from "./components/card.js";
 import { openModalWindow, closeModalWindow, setCloseModalWindowEventListeners } from "./components/modal.js";
 import { enableValidation, clearValidation } from "./components/validation.js";
@@ -59,36 +59,70 @@ const handlePreviewPicture = ({ name, link }) => {
   openModalWindow(imageModalWindow);
 };
 
+
 const handleProfileFormSubmit = (evt) => {
   evt.preventDefault();
-  profileTitle.textContent = profileTitleInput.value;
-  profileDescription.textContent = profileDescriptionInput.value;
-  closeModalWindow(profileFormModalWindow);
+  setUserInfo({
+    name: profileTitleInput.value,
+    about: profileDescriptionInput.value,
+  })
+    .then((userData) => {
+      profileTitle.textContent = userData.name;
+      profileDescription.textContent = userData.about;
+      closeModalWindow(profileFormModalWindow);
+    })
+    .catch((err) => {
+      console.log(err);
+    });
 };
 
 const handleAvatarFromSubmit = (evt) => {
   evt.preventDefault();
-  profileAvatar.style.backgroundImage = `url(${avatarInput.value})`;
-  closeModalWindow(avatarFormModalWindow);
+
+  const newAvatarUrl = avatarInput.value;
+
+  // Отправляем запрос на сервер
+  setAvatar({ avatar: newAvatarUrl })
+    .then((userData) => {
+      // Обновляем аватар на странице
+      profileAvatar.style.backgroundImage = url(`${userData.avatar}`);
+      closeModalWindow(avatarFormModalWindow);
+    })
+    .catch((err) => {
+      console.error("Ошибка при обновлении аватара:", err);
+    });
 };
 
 const handleCardFormSubmit = (evt) => {
   evt.preventDefault();
-  placesWrap.prepend(
-    createCardElement(
-      {
-        name: cardNameInput.value,
-        link: cardLinkInput.value,
-      },
-      {
-        onPreviewPicture: handlePreviewPicture,
-        onLikeIcon: likeCard,
-        onDeleteCard: deleteCard,
-      }
-    )
-  );
 
-  closeModalWindow(cardFormModalWindow);
+  // Получаем значения из формы
+  const cardName = cardNameInput.value;
+  const cardLink = cardLinkInput.value;
+
+  // Отправляем на сервер
+  addNewCard({ name: cardName, link: cardLink })
+    .then((newCardData) => {
+      // Создаём элемент карточки и передаём currentUserId
+      const cardElement = createCardElement(
+        newCardData,
+        {
+          onPreviewPicture: handlePreviewPicture,
+          onLikeIcon: likeCard,
+          onDeleteCard: deleteCard,
+        },
+        currentUserId // передаём ID текущего пользователя
+      );
+
+      // Добавляем в начало списка
+      placesWrap.prepend(cardElement);
+
+      // Закрываем модальное окно
+      closeModalWindow(cardFormModalWindow);
+    })
+    .catch((err) => {
+      console.log('Ошибка при добавлении карточки:', err);
+    });
 };
 
 // EventListeners
@@ -133,17 +167,21 @@ allPopups.forEach((popup) => {
 
 
 // Загружаем данные с сервера и отображаем их
+let currentUserId;
 Promise.all([getCardList(), getUserInfo()])
   .then(([cards, userData]) => {
+    // Сохраняем ID текущего пользователя
+    currentUserId = userData._id; // ← вот здесь!
+
     // Обновляем профиль
     profileTitle.textContent = userData.name;
     profileDescription.textContent = userData.about;
     profileAvatar.style.backgroundImage = `url(${userData.avatar})`;
 
-    // Очищаем контейнер 
+    // Очищаем контейнер
     placesWrap.innerHTML = '';
 
-    // Рендер карточки из данных сервера
+    // Рендерим карточки
     cards.forEach((cardData) => {
       const cardElement = createCardElement(
         cardData,
@@ -151,11 +189,10 @@ Promise.all([getCardList(), getUserInfo()])
           onPreviewPicture: handlePreviewPicture,
           onLikeIcon: likeCard,
           onDeleteCard: deleteCard,
-        }
+        },
+        currentUserId // передаём userId
       );
       placesWrap.append(cardElement);
     });
   })
-  .catch((err) => {
-    console.log(err);
-  });
+  .catch(console.log);
