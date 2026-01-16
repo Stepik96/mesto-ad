@@ -1,7 +1,29 @@
 import { deleteCard as deleteCardApi } from './api.js';
+import { changeLikeCardStatus } from './api.js';
 
-export const likeCard = (likeButton) => {
-  likeButton.classList.toggle("card__like-button_is-active");
+export const likeCard = (likeButton, cardId) => {
+  // Находим карточку и элемент счётчика лайков
+  const cardElement = likeButton.closest('.card');
+  const likeCountElement = cardElement.querySelector('.card__like-count');
+
+  // Проверяем, стоит ли уже лайк
+  const isLiked = likeButton.classList.contains('card__like-button_is-active');
+
+  // Отправляем запрос на сервер
+  changeLikeCardStatus(cardId, isLiked)
+    .then((updatedCard) => {
+      // Обновляем состояние кнопки
+      likeButton.classList.toggle('card__like-button_is-active', !isLiked);
+
+      // Обновляем счётчик лайков
+      if (likeCountElement) {
+        likeCountElement.textContent = updatedCard.likes.length;
+      }
+    })
+    .catch((err) => {
+      console.error('Ошибка при изменении лайка:', err);
+      // Опционально: можно показать пользователю уведомление об ошибке
+    });
 };
 
 export const deleteCard = (cardElement, cardId) => {
@@ -33,26 +55,35 @@ export const createCardElement = (
   const likeButton = cardElement.querySelector(".card__like-button");
   const deleteButton = cardElement.querySelector(".card__control-button_type_delete");
   const cardImage = cardElement.querySelector(".card__image");
+  const likeCountElement = cardElement.querySelector(".card__like-count");
 
+  // Устанавливаем данные из сервера
   cardImage.src = data.link;
   cardImage.alt = data.name;
   cardElement.querySelector(".card__title").textContent = data.name;
+
+  // обновляем состояние лайка при рендере
+  if (likeCountElement) {
+    likeCountElement.textContent = data.likes.length;
+  }
+
+  // Проверяем, поставил ли текущий пользователь лайк
+  const isLikedByMe = data.likes.some(like => like._id === userId);
+  if (isLikedByMe) {
+    likeButton.classList.add("card__like-button_is-active");
+  } else {
+    likeButton.classList.remove("card__like-button_is-active");
+  }
 
   // Обработчик лайка
   if (onLikeIcon) {
     likeButton.addEventListener("click", () => onLikeIcon(likeButton, data._id));
   }
 
-  // ПРОВЕРКА ВЛАДЕЛЬЦА
+  // Проверка владельца для удаления
   if (onDeleteCard && data.owner && data.owner._id === userId) {
-    // Если карточка моя — оставляем кнопку и навешиваем обработчик
-    deleteButton.addEventListener("click", () => {
-      // Вместо открытия модального окна здесь, мы просто вызываем функцию-колбэк
-      // Эта функция будет реализована в index.js и будет открывать модальное окно
-      onDeleteCard(cardElement, data._id);
-    });
+    deleteButton.addEventListener("click", () => onDeleteCard(cardElement, data._id));
   } else {
-    // Если не моя (или нет данных) — удаляем кнопку из DOM
     deleteButton.remove();
   }
 
