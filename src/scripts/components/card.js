@@ -1,9 +1,20 @@
+import { deleteCard as deleteCardApi } from './api.js';
+
 export const likeCard = (likeButton) => {
   likeButton.classList.toggle("card__like-button_is-active");
 };
 
-export const deleteCard = (cardElement) => {
-  cardElement.remove();
+export const deleteCard = (cardElement, cardId) => {
+  // Отправляем запрос на удаление карточки с сервера
+  deleteCardApi(cardId)
+    .then(() => {
+      // Если удаление прошло успешно, удаляем элемент из DOM
+      cardElement.remove();
+    })
+    .catch((err) => {
+      console.error('Ошибка при удалении карточки:', err);
+      // В случае ошибки можно показать пользователю сообщение
+    });
 };
 
 const getTemplate = () => {
@@ -16,7 +27,7 @@ const getTemplate = () => {
 export const createCardElement = (
   data,
   { onPreviewPicture, onLikeIcon, onDeleteCard },
-  userId // ← добавили ID текущего пользователя
+  userId
 ) => {
   const cardElement = getTemplate();
   const likeButton = cardElement.querySelector(".card__like-button");
@@ -32,10 +43,14 @@ export const createCardElement = (
     likeButton.addEventListener("click", () => onLikeIcon(likeButton, data._id));
   }
 
-  // ПРОВЕРКА ВЛАДЕЛЬЦА 
+  // ПРОВЕРКА ВЛАДЕЛЬЦА
   if (onDeleteCard && data.owner && data.owner._id === userId) {
     // Если карточка моя — оставляем кнопку и навешиваем обработчик
-    deleteButton.addEventListener("click", () => onDeleteCard(cardElement, data._id));
+    deleteButton.addEventListener("click", () => {
+      // Вместо открытия модального окна здесь, мы просто вызываем функцию-колбэк
+      // Эта функция будет реализована в index.js и будет открывать модальное окно
+      onDeleteCard(cardElement, data._id);
+    });
   } else {
     // Если не моя (или нет данных) — удаляем кнопку из DOM
     deleteButton.remove();

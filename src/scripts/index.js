@@ -52,6 +52,33 @@ const avatarFormModalWindow = document.querySelector(".popup_type_edit-avatar");
 const avatarForm = avatarFormModalWindow.querySelector(".popup__form");
 const avatarInput = avatarForm.querySelector(".popup__input");
 
+const removeCardModalWindow = document.querySelector(".popup_type_remove-card");
+const removeCardForm = removeCardModalWindow.querySelector(".popup__form");
+
+let currentCardToDelete = null; // Переменная для хранения ссылки на удаляемую карточку и её ID
+
+const handleRemoveCardSubmit = (evt) => {
+  evt.preventDefault();
+
+  // Убедимся, что мы знаем, какую карточку нужно удалить
+  if (!currentCardToDelete || !currentCardToDelete.cardId) {
+    console.error("Не удалось определить карточку для удаления.");
+    closeModalWindow(removeCardModalWindow);
+    return;
+  }
+
+  // Вызываем функцию удаления карточки
+  deleteCard(currentCardToDelete.element, currentCardToDelete.cardId, currentUserId);
+
+  // Закрываем модальное окно
+  closeModalWindow(removeCardModalWindow);
+
+  // Сбрасываем переменную
+  currentCardToDelete = null;
+};
+
+removeCardForm.addEventListener("submit", handleRemoveCardSubmit);
+
 const handlePreviewPicture = ({ name, link }) => {
   imageElement.src = link;
   imageElement.alt = name;
@@ -109,9 +136,18 @@ const handleCardFormSubmit = (evt) => {
         {
           onPreviewPicture: handlePreviewPicture,
           onLikeIcon: likeCard,
-          onDeleteCard: deleteCard,
+          onDeleteCard: (element, id) => {
+            // Сохраняем данные о карточке для удаления
+            currentCardToDelete = {
+              element: element,
+              cardId: id,
+            };
+
+            // Открываем модальное окно подтверждения
+            openModalWindow(removeCardModalWindow);
+          },
         },
-        currentUserId // передаём ID текущего пользователя
+        currentUserId
       );
 
       // Добавляем в начало списка
@@ -146,6 +182,7 @@ openCardFormButton.addEventListener("click", () => {
   openModalWindow(cardFormModalWindow);
 });
 
+
 // отображение карточек
 /*
 initialCards.forEach((data) => {
@@ -171,7 +208,7 @@ let currentUserId;
 Promise.all([getCardList(), getUserInfo()])
   .then(([cards, userData]) => {
     // Сохраняем ID текущего пользователя
-    currentUserId = userData._id; // ← вот здесь!
+    currentUserId = userData._id; 
 
     // Обновляем профиль
     profileTitle.textContent = userData.name;
@@ -188,11 +225,24 @@ Promise.all([getCardList(), getUserInfo()])
         {
           onPreviewPicture: handlePreviewPicture,
           onLikeIcon: likeCard,
-          onDeleteCard: deleteCard,
+          onDeleteCard: (element, id) => {
+            // Сохраняем данные о карточке для удаления
+            currentCardToDelete = {
+              element: element,
+              cardId: id,
+            };
+
+            // Открываем модальное окно подтверждения
+            openModalWindow(removeCardModalWindow);
+          },
         },
-        currentUserId // передаём userId
+        currentUserId
       );
       placesWrap.append(cardElement);
     });
   })
   .catch(console.log);
+
+  
+
+
