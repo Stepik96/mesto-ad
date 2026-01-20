@@ -257,7 +257,6 @@ const handleLogoClick = () => {
       const infoList = statsModal.querySelector('.popup__info');
       const userList = statsModal.querySelector('.popup__list');
 
-      // Очищаем содержимое
       infoList.innerHTML = '';
       userList.innerHTML = '';
 
@@ -265,10 +264,10 @@ const handleLogoClick = () => {
       statsModal.querySelector('.popup__title').textContent = 'Статистика пользователей';
 
       // Устанавливаем заголовок для списка пользователей
-      statsModal.querySelector('.popup__text').textContent = 'Все пользователи'; // Добавлено: Заголовок "Все пользователи"
+      statsModal.querySelector('.popup__text').textContent = 'Все пользователи'; 
 
       // Собираем уникальных пользователей и считаем их карточки
-      const userCardCounts = new Map(); // Карта: ID пользователя -> количество карточек
+      const userCardCounts = new Map(); 
 
       cards.forEach(card => {
         if (card.owner?._id) {
@@ -278,7 +277,7 @@ const handleLogoClick = () => {
         }
       });
 
-      // Вспомогательная функция: создаёт строку статистики (термин + значение)
+      // создаёт строку статистики 
       const createInfoItem = (term, description) => {
         const template = document
           .getElementById('popup-info-definition-template')
@@ -289,7 +288,7 @@ const handleLogoClick = () => {
         return template;
       };
 
-      // Вспомогательная функция: создаёт бейдж пользователя (только имя)
+      // создаёт бейдж пользователя (только имя)
       const createUserBadge = (name) => {
         const template = document
           .getElementById('popup-info-user-preview-template')
@@ -299,12 +298,12 @@ const handleLogoClick = () => {
         return template;
       };
 
-      // === Заполняем статистику ===
+      // Заполняем статистику 
       infoList.append(createInfoItem('Всего карточек:', cards.length));
 
       // Правильный расчет первой и последней карточки
-      const firstCard = cards[cards.length - 1]; // Первая создана (самая старая)
-      const lastCard = cards[0];                 // Последняя создана (самая новая)
+      const firstCard = cards[cards.length - 1]; // самая старая
+      const lastCard = cards[0];                 // самая новая
 
       infoList.append(createInfoItem('Первая создана:', formatDate(firstCard.createdAt)));
       infoList.append(createInfoItem('Последняя создана:', formatDate(lastCard.createdAt)));
@@ -316,13 +315,12 @@ const handleLogoClick = () => {
       if (userCardCounts.size > 0) {
         maxCardsFromOneUser = Math.max(...Array.from(userCardCounts.values()));
       }
-      infoList.append(createInfoItem('Максимум карточек от одного:', maxCardsFromOneUser)); // Добавлено: Пункт "Максимум карточек от одного"
+      infoList.append(createInfoItem('Максимум карточек от одного:', maxCardsFromOneUser)); 
 
-      // === Заполняем список пользователей ===
+      // Заполняем список пользователей
       // Используем карту userCardCounts для получения имен пользователей
       userCardCounts.forEach((count, userId) => {
-        // Найдем имя пользователя по его ID в списке карточек (или используйте другую логику, если есть доступ к данным пользователей)
-        // Здесь мы просто берем имя из первой карточки, которую он создал (это может быть не идеально, но работает для примера)
+        // Найдем имя пользователя по его ID в списке карточек
         const userName = cards.find(card => card.owner?._id === userId)?.owner?.name || 'Неизвестный';
         userList.append(createUserBadge(userName));
       });
